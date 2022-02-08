@@ -1,9 +1,10 @@
+import { BookingsContainer, SearchContainer } from '../../components'
 const AllBookings = () => {
-    return (
-        <h1>
-            All Bookings Page
-        </h1>
-    )
+  return (
+    <>
+      <BookingsContainer />
+    </>
+  )
 }
 
 export default AllBookings

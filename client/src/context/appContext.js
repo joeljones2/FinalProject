@@ -1,9 +1,11 @@
-import React, { useState, useReducer, useContext } from 'react'
+import React, { useState, useReducer, useContext, useEffect } from 'react'
 import reducer from './reducer'
 import axios from 'axios'
 import { DISPLAY_ALERT, CLEAR_ALERT, 
-  REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, 
-  LOGIN_USER_BEGIN, LOGIN_USER_ERROR, LOGIN_USER_SUCCESS, TOGGLE_SIDEBAR, LOGOUT_USER } from './actions'
+  SETUP_USER_BEGIN, SETUP_USER_SUCCESS, SETUP_USER_ERROR, TOGGLE_SIDEBAR,
+  LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR,
+  HANDLE_CHANGE, CREATE_BOOKING_BEGIN, CREATE_BOOKING_ERROR, CREATE_BOOKING_SUCCESS,
+  CLEAR_VALUES, GET_BOOKINGS_BEGIN, GET_BOOKINGS_SUCCESS, DELETE_BOOKING_BEGIN} from "./actions"
 
 const token = localStorage.getItem('token')
 const user = localStorage.getItem('user')
@@ -20,10 +22,53 @@ export const initialState = {
   manager: manager,
   clearance: clearance,
   showSidebar: false,
+  isEditing: false,
+  editBookingId: '',
+  date: '',
+  roomidOptions: ['Main Office 1', 'Main Office 2', 'Secure Room 1', 'Secure Room 2', 'Secure Room 3', 'Collab Zone'],
+  roomid: 'Main Office 1',
+  deskidOptions: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6',
+                  'A7', 'A8', 'A9', 'A10', 'A11', 'A12',
+                   'A13', 'A14', 'A15', 'A16'], 
+  deskid: 'A1', 
+  bookings: [],
+  totalBookings: 0,
+  numOfPages: 1,
+  page: 1,
 }
 const AppContext = React.createContext()
 const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
+
+  // axios
+  const authFetch = axios.create({
+    baseURL: '/api/v1',
+  })
+  // request
+
+  authFetch.interceptors.request.use(
+    (config) => {
+      config.headers.common['Authorization'] = `Bearer ${state.token}`
+      return config
+    },
+    (error) => {
+      return Promise.reject(error)
+    }
+  )
+  // response
+
+  authFetch.interceptors.response.use(
+    (response) => {
+      return response
+    },
+    (error) => {
+      // console.log(error.response)
+      if (error.response.status === 401) {
+        logoutUser()
+      }
+      return Promise.reject(error)
+    }
+  )
 
   const displayAlert = () => {
       dispatch({type:DISPLAY_ALERT})
@@ -52,54 +97,138 @@ const AppProvider = ({ children }) => {
     localStorage.removeItem('clearance')
   }
 
-  const registerUser = async (currentUser) => {
-    dispatch({type : REGISTER_USER_BEGIN})
+  const setupUser = async ({ currentUser, endPoint, alertText }) => {
+    dispatch({ type: SETUP_USER_BEGIN })
     try {
-      const response = await axios.post('/api/v1/auth/register', currentUser)
-      const {user, token, manager, clearance} = response.data
+      const { data } = await axios.post(`/api/v1/auth/${endPoint}`, currentUser)
+
+      const { user, token, location } = data
       dispatch({
-        type: REGISTER_USER_SUCCESS,
-        payload: {user, token, manager, clearance},
+        type: SETUP_USER_SUCCESS,
+        payload: { user, token, location, alertText },
       })
-      addUserToLocalStorage({ user, token, manager, clearance })
+      addUserToLocalStorage({ user, token, location })
     } catch (error) {
-      dispatch({type: REGISTER_USER_ERROR, payload: {msg: error.response.data.msg}})
+      dispatch({
+        type: SETUP_USER_ERROR,
+        payload: { msg: error.response.data.msg },
+      })
     }
     clearAlert()
   }
-
-  const loginUser = async (currentUser) => {
-    dispatch({type : LOGIN_USER_BEGIN})
-    try {
-      const { data } = await axios.post('/api/v1/auth/login', currentUser)
-      const {user, token, manager, clearance} = data
-      dispatch({
-        type: LOGIN_USER_SUCCESS,
-        payload: {user, token, manager, clearance},
-      })
-      addUserToLocalStorage({ user, token, manager, clearance })
-    } catch (error) {
-      dispatch({
-        type: LOGIN_USER_ERROR, 
-        payload: {msg: error.response.data.msg}})
-    }
-    clearAlert()
-  }
-
+  
   const toggleSidebar = () => {
     dispatch({ type: TOGGLE_SIDEBAR })
   }
-
 
   const logoutUser = () => {
     dispatch({ type: LOGOUT_USER })
     removeUserFromLocalStorage()
   }
 
+  const updateUser = async (currentUser) => {
+    dispatch({ type: UPDATE_USER_BEGIN })
+    try {
+      const { data } = await authFetch.patch('/auth/updateUser', currentUser)
+
+      const { user, token, clearance, manager } = data
+
+      dispatch({
+        type: UPDATE_USER_SUCCESS,
+        payload: { user, token, clearance, manager },
+      })
+      addUserToLocalStorage({ user, token, clearance, manager })
+    } catch (error) {
+      if (error.response.status !== 401) {
+        dispatch({
+          type: UPDATE_USER_ERROR,
+          payload: { msg: error.response.data.msg },
+        })
+      }
+    }
+    clearAlert()
+  }
+
+  const createBooking = async () => {
+    dispatch({ type: CREATE_BOOKING_BEGIN })
+    try {
+      const { roomid, deskid, date } = state
+  
+      await authFetch.post('/bookings', {
+        roomid, 
+        deskid, 
+        date
+      })
+      dispatch({
+        type: CREATE_BOOKING_SUCCESS,
+      })
+      // call function instead clearValues()
+      dispatch({ type: CLEAR_VALUES })
+    } catch (error) {
+      if (error.response.status === 401) return
+      dispatch({
+        type: CREATE_BOOKING_ERROR,
+        payload: { msg: error.response.data.msg },
+      })
+    }
+    clearAlert()
+  }
+
+  const getBookings = async () => {
+    let url = `/bookings/`
+
+    dispatch({ type: GET_BOOKINGS_BEGIN })
+    try {
+      const { data } = await authFetch(url)
+      const { bookings, totalBookings, numOfPages } = data
+      dispatch({
+        type: GET_BOOKINGS_SUCCESS,
+        payload: {
+          bookings,
+          totalBookings,
+          numOfPages,
+        },
+      })
+    } catch (error) {
+      console.log(error.response)
+      logoutUser()
+    }
+    clearAlert()
+  }
+  
+  
+
+  const handleChange = ({ name, value }) => {
+    dispatch({
+      type: HANDLE_CHANGE,
+      payload: { name, value },
+    })
+  }
+
+  const clearValues = () => {
+    dispatch({ type: CLEAR_VALUES })
+  }
+
+  const setEditBooking = () => {
+    console.log('set edit booking')
+  }
+
+  const deleteBooking = async (bookingId) => {
+    dispatch({ type: DELETE_BOOKING_BEGIN })
+    try {
+      await authFetch.delete(`/bookings/${bookingId}`)
+      getBookings()
+    } catch (error) {
+      logoutUser()
+    }
+  }
+
   return (
     <AppContext.Provider
       value={{
-        ...state, displayAlert, registerUser, loginUser, toggleSidebar, logoutUser
+        ...state, displayAlert, setupUser, toggleSidebar, logoutUser,
+         updateUser, createBooking, handleChange, clearValues, getBookings,
+         setEditBooking, deleteBooking
       }}
     >
       {children}

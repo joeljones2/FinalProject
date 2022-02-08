@@ -1,6 +1,8 @@
 import { DISPLAY_ALERT, CLEAR_ALERT, 
-  REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, 
-  LOGIN_USER_BEGIN, LOGIN_USER_ERROR, LOGIN_USER_SUCCESS, TOGGLE_SIDEBAR, LOGOUT_USER } from "./actions"
+  SETUP_USER_BEGIN, SETUP_USER_SUCCESS, SETUP_USER_ERROR, TOGGLE_SIDEBAR,
+  LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR,
+  HANDLE_CHANGE, CREATE_BOOKING_BEGIN, CREATE_BOOKING_ERROR, CREATE_BOOKING_SUCCESS, 
+  CLEAR_VALUES, GET_BOOKINGS_SUCCESS, GET_BOOKINGS_BEGIN, DELETE_BOOKING_BEGIN } from "./actions"
 
   import { initialState } from './appContext'
 
@@ -21,56 +23,31 @@ const reducer = (state, action) => {
           alertText: '',
         }
       }
-    if (action.type === REGISTER_USER_BEGIN){
-      return{...state, isLoading: true }
-    }
-    if (action.type === REGISTER_USER_SUCCESS) {
-      return {
-        ...state,
-        isLoading: true,
-        token: action.payload.token,
-        user: action.payload.user,
-        manager: action.payload.manager,
-        clearance: action.payload.clearance,
-        showAlert: true,
-        alertType: 'success',
-        alertText: 'User Created, Redirecting',
+      if (action.type === SETUP_USER_BEGIN) {
+        return { ...state, isLoading: true }
       }
-    }
-    if (action.type === REGISTER_USER_ERROR) {
-      return {
-        ...state,
-        isLoading: false,
-        showAlert: true,
-        alertType: 'danger',
-        alertText: action.payload.msg,
+      if (action.type === SETUP_USER_SUCCESS) {
+        return {
+          ...state,
+          isLoading: true,
+          token: action.payload.token,
+          user: action.payload.user,
+          userLocation: action.payload.location,
+          jobLocation: action.payload.location,
+          showAlert: true,
+          alertType: 'success',
+          alertText: action.payload.alertText,
+        }
       }
-    }
-    if (action.type === LOGIN_USER_BEGIN){
-      return{...state, isLoading: true }
-    }
-    if (action.type === LOGIN_USER_SUCCESS) {
-      return {
-        ...state,
-        isLoading: true,
-        token: action.payload.token,
-        user: action.payload.user,
-        manager: action.payload.manager,
-        clearance: action.payload.clearance,
-        showAlert: true,
-        alertType: 'success',
-        alertText: 'Log in successful, Redirecting...',
+      if (action.type === SETUP_USER_ERROR) {
+        return {
+          ...state,
+          isLoading: false,
+          showAlert: true,
+          alertType: 'danger',
+          alertText: action.payload.msg,
+        }
       }
-    }
-    if (action.type === LOGIN_USER_ERROR) {
-      return {
-        ...state,
-        isLoading: false,
-        showAlert: true,
-        alertType: 'danger',
-        alertText: action.payload.msg,
-      }
-    }
     if (action.type === TOGGLE_SIDEBAR) {
       return { 
         ...state,
@@ -85,7 +62,82 @@ const reducer = (state, action) => {
         clearance: '',
       }
     }
-
+    if (action.type === UPDATE_USER_BEGIN) {
+      return { ...state, isLoading: true }
+    }   
+    if (action.type === UPDATE_USER_SUCCESS) {
+      return {
+        ...state,
+        isLoading: false,
+        token:action.payload.token,
+        user: action.payload.user,
+        manager: action.payload.manager,
+        clearance: action.payload.clearance,
+        showAlert: true,
+        alertType: 'success',
+        alertText: 'User Profile Updated!',
+      }
+    }
+    if (action.type === UPDATE_USER_ERROR) {
+      return {
+        ...state,
+        isLoading: false,
+        showAlert: true,
+        alertType: 'danger',
+        alertText: action.payload.msg,
+      }
+    }
+    if (action.type === HANDLE_CHANGE) {
+      return { ...state, [action.payload.name]: action.payload.value }
+    }
+    if (action.type === CLEAR_VALUES) {
+      const initialState = {
+        isEditing: false,
+        editJobId: '',
+        position: '',
+        company: '',
+        jobLocation: state.userLocation,
+        jobType: 'full-time',
+        status: 'pending',
+      }
+      return { ...state, ...initialState }
+    }
+    if (action.type === CREATE_BOOKING_BEGIN) {
+      return { ...state, isLoading: true }
+    }
+    if (action.type === CREATE_BOOKING_SUCCESS) {
+      return {
+        ...state,
+        isLoading: false,
+        showAlert: true,
+        alertType: 'success',
+        alertText: 'Booking Confirmed',
+      }
+    }
+    if (action.type === CREATE_BOOKING_ERROR) {
+      return {
+        ...state,
+        isLoading: false,
+        showAlert: true,
+        alertType: 'danger',
+        alertText: action.payload.msg,
+      }
+    }
+    if (action.type === GET_BOOKINGS_BEGIN) {
+      return { ...state, isLoading: true, showAlert: false }
+    }
+    if (action.type === GET_BOOKINGS_SUCCESS) {
+      return {
+        ...state,
+        isLoading: false,
+        bookings: action.payload.bookings,
+        totalBookings: action.payload.totalBookings,
+        numOfPages: action.payload.numOfPages,
+      }
+    }
+    if (action.type === DELETE_BOOKING_BEGIN) {
+      return { ...state, isLoading: true }
+    }
     throw new Error(`no such action :${action.type}`)
   }
   export default reducer
