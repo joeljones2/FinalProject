@@ -47,8 +47,34 @@ const login = async (req, res) => {
     res.status(StatusCodes.OK).json({ user, token})
   }
 
-const updateUser = async (req, res) => {
-    res.send('update user')
-}
+  const updateUser = async (req, res) => {
+    const { email, name, manager, clearance } = req.body
+    if (!email || !name || !manager || !clearance) {
+      console.log(req.body)
+      throw new BadRequestError('Please bbprovide all values')
+    }
+  
+    const user = await User.findOne({ _id: req.user.userId })
+  
+    user.email = email
+    user.name = name
+    user.manager = manager
+    user.clearance = clearance
+  
+    await user.save()
+  
+    // various setups
+    // in this case only id
+    // if other properties included, must re-generate
+  
+    const token = user.createJWT()
+    res.status(StatusCodes.OK).json({
+      user,
+      token,
+      manager: user.manager,
+      clearance: user.clearance,
+    })
+  }
+
 
 export {register, login, updateUser}

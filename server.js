@@ -1,3 +1,4 @@
+import 'express-async-errors'
 import express from 'express'
 import dotenv from 'dotenv'
 dotenv.config()
@@ -7,8 +8,8 @@ import errorHandlerMiddleware from './middleware/error-handler.js'
 import connectDB from './db/connect.js'
 import authRouter from './routes/authRoutes.js'
 import bookingRouter from './routes/bookingRoutes.js'
-import 'express-async-errors'
 import morgan from 'morgan'
+import authenticateUser from './middleware/auth.js'
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'))
@@ -26,7 +27,7 @@ app.get('/api/v1', (req, res) => {
 // use imported authRouter
 app.use('/api/v1/auth', authRouter)
 // use imported bookingRouter
-app.use('/api/v1/bookings', bookingRouter)
+app.use('/api/v1/bookings', authenticateUser, bookingRouter)
 // use imported middleware
 app.use(notFoundMiddleware)
 app.use(errorHandlerMiddleware)

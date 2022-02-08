@@ -29,9 +29,9 @@ const UserSchema = new mongoose.Schema({
         select: false,
     },
     manager: {
-        type: Boolean,
+        type: String,
         required: [true, 'Please state whether you are a manager'],
-        default: false,
+        default: 'No',
     },
     clearance: {
         type: String,
@@ -41,7 +41,7 @@ const UserSchema = new mongoose.Schema({
 })
 
 UserSchema.pre('save', async function () {
-    console.log(this.password);
+  if(!this.isModified('password')) return
     const salt = await bcrypt.genSalt(10)
     this.password = await bcrypt.hash(this.password, salt)
   })

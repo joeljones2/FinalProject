@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components'
 import Alert from '../components/Alert'
 import Wrapper from '../assets/wrappers/RegisterPage'
 import FormRow from '../components/FormRow'
 import { useAppContext } from '../context/appContext'
+import { useNavigate } from 'react-router-dom'
 // global context and useNavigate later
 
 const initialState = {
@@ -41,11 +41,18 @@ function Register() {
     const currentUser = { name, email, password, clearance, manager }
     if(isMember){
       loginUser(currentUser)
+      setTimeout(() => {
+        navigate ('/')
+       }, 3000)
     }
     else {
       registerUser(currentUser)
+      setTimeout(() => {
+        navigate ('/')
+       }, 3000)
     }
   }
+
 
   return (
     <Wrapper className='full-page'>
