@@ -5,7 +5,8 @@ import { DISPLAY_ALERT, CLEAR_ALERT,
   SETUP_USER_BEGIN, SETUP_USER_SUCCESS, SETUP_USER_ERROR, TOGGLE_SIDEBAR,
   LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR,
   HANDLE_CHANGE, CREATE_BOOKING_BEGIN, CREATE_BOOKING_ERROR, CREATE_BOOKING_SUCCESS,
-  CLEAR_VALUES, GET_BOOKINGS_BEGIN, GET_BOOKINGS_SUCCESS, DELETE_BOOKING_BEGIN} from "./actions"
+  CLEAR_VALUES, GET_BOOKINGS_BEGIN, GET_BOOKINGS_SUCCESS, DELETE_BOOKING_BEGIN, 
+  SHOW_STATS_BEGIN, SHOW_STATS_SUCCESS } from "./actions"
 
 const token = localStorage.getItem('token')
 const user = localStorage.getItem('user')
@@ -25,8 +26,8 @@ export const initialState = {
   isEditing: false,
   editBookingId: '',
   date: '',
-  roomidOptions: ['Main Office 1', 'Main Office 2', 'Secure Room 1', 'Secure Room 2', 'Secure Room 3', 'Collab Zone'],
-  roomid: 'Main Office 1',
+  roomidOptions: ['Main1', 'Main2', 'S3', 'S4', 'S5', 'CollabZone'],
+  roomid: 'Main1',
   deskidOptions: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6',
                   'A7', 'A8', 'A9', 'A10', 'A11', 'A12',
                    'A13', 'A14', 'A15', 'A16'], 
@@ -35,6 +36,8 @@ export const initialState = {
   totalBookings: 0,
   numOfPages: 1,
   page: 1,
+  stats: {},
+  monthlyApplications: [],
 }
 const AppContext = React.createContext()
 const AppProvider = ({ children }) => {
@@ -102,12 +105,13 @@ const AppProvider = ({ children }) => {
     try {
       const { data } = await axios.post(`/api/v1/auth/${endPoint}`, currentUser)
 
-      const { user, token, location } = data
+      const { user, token, manager, clearance } = data
+
       dispatch({
         type: SETUP_USER_SUCCESS,
-        payload: { user, token, location, alertText },
+        payload: { user, token, manager, clearance, alertText },
       })
-      addUserToLocalStorage({ user, token, location })
+      addUserToLocalStorage({ user, token, manager, clearance})
     } catch (error) {
       dispatch({
         type: SETUP_USER_ERROR,
@@ -153,7 +157,13 @@ const AppProvider = ({ children }) => {
     dispatch({ type: CREATE_BOOKING_BEGIN })
     try {
       const { roomid, deskid, date } = state
-  
+
+      const userArray = localStorage.getItem('user')
+      const parsedArray = userArray.JSON.parse()
+      const clearance = parsedArray.clearance
+
+      console.log(clearance)
+
       await authFetch.post('/bookings', {
         roomid, 
         deskid, 
@@ -162,16 +172,15 @@ const AppProvider = ({ children }) => {
       dispatch({
         type: CREATE_BOOKING_SUCCESS,
       })
-      // call function instead clearValues()
-      dispatch({ type: CLEAR_VALUES })
-    } catch (error) {
-      if (error.response.status === 401) return
-      dispatch({
-        type: CREATE_BOOKING_ERROR,
-        payload: { msg: error.response.data.msg },
-      })
-    }
-    clearAlert()
+
+      } catch (error) {
+        if (error.response.status === 401) return
+        dispatch({
+          type: CREATE_BOOKING_ERROR,
+          payload: { msg: error.response.data.msg },
+        })
+      }
+      clearAlert()
   }
 
   const getBookings = async () => {
@@ -223,12 +232,31 @@ const AppProvider = ({ children }) => {
     }
   }
 
+  const showStats = async () => {
+    dispatch({ type: SHOW_STATS_BEGIN })
+    try {
+      const { data } = await authFetch('/bookings/stats')
+      dispatch({
+        type: SHOW_STATS_SUCCESS,
+        payload: {
+          stats: data.defaultStats,
+          monthlyBookings: data.monthlyBookings,
+        },
+      })
+    } catch (error) {
+      console.log(error.response)
+      // logoutUser()
+    }
+
+clearAlert()
+  }
+
   return (
     <AppContext.Provider
       value={{
         ...state, displayAlert, setupUser, toggleSidebar, logoutUser,
          updateUser, createBooking, handleChange, clearValues, getBookings,
-         setEditBooking, deleteBooking
+         setEditBooking, deleteBooking, showStats
       }}
     >
       {children}

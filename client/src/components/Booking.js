@@ -11,7 +11,7 @@ const Booking = ({
   deskid,
   date,
 }) => {
-  const { setEditBooking, deleteBooking } = useAppContext()
+  const { deleteBooking } = useAppContext()
 
   let cdate = moment(date)
   cdate = cdate.format('MMM Do, YYYY')

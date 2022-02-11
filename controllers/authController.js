@@ -33,7 +33,7 @@ const login = async (req, res) => {
     if (!email || !password) {
       throw new BadRequestError('Please provide all values')
     }
-    const user = await User.findOne({ email }).select('+password')
+    const user = await User.findOne({ email}).select('+password')
     if (!user) {
       throw new UnAuthenticatedError('Invalid Credentials')
     }
@@ -44,14 +44,14 @@ const login = async (req, res) => {
     }
     const token = user.createJWT()
     user.password = undefined
-    res.status(StatusCodes.OK).json({ user, token})
+    res.status(StatusCodes.OK).json({ user, token })
   }
 
   const updateUser = async (req, res) => {
     const { email, name, manager, clearance } = req.body
     if (!email || !name || !manager || !clearance) {
       console.log(req.body)
-      throw new BadRequestError('Please bbprovide all values')
+      throw new BadRequestError('Please provide all values')
     }
   
     const user = await User.findOne({ _id: req.user.userId })

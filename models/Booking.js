@@ -5,7 +5,7 @@ const BookingSchema = new mongoose.Schema(
         roomid: {
             type: String,
             required: [true, 'Please provide room ID'],
-            enum: ['Main Office 1', 'Main Office 2', 'Secure Room 1', 'Secure Room 2', 'Secure Room 3', 'Collab Zone'],
+            enum: ['Main1', 'Main2', 'S1', 'S2', 'S3', 'CollabZone'],
           },
         deskid: {
             type: String,

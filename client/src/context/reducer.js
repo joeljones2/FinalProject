@@ -2,7 +2,8 @@ import { DISPLAY_ALERT, CLEAR_ALERT,
   SETUP_USER_BEGIN, SETUP_USER_SUCCESS, SETUP_USER_ERROR, TOGGLE_SIDEBAR,
   LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR,
   HANDLE_CHANGE, CREATE_BOOKING_BEGIN, CREATE_BOOKING_ERROR, CREATE_BOOKING_SUCCESS, 
-  CLEAR_VALUES, GET_BOOKINGS_SUCCESS, GET_BOOKINGS_BEGIN, DELETE_BOOKING_BEGIN } from "./actions"
+  CLEAR_VALUES, GET_BOOKINGS_SUCCESS, GET_BOOKINGS_BEGIN, DELETE_BOOKING_BEGIN,
+  SHOW_STATS_SUCCESS, SHOW_STATS_BEGIN } from "./actions"
 
   import { initialState } from './appContext'
 
@@ -32,8 +33,8 @@ const reducer = (state, action) => {
           isLoading: true,
           token: action.payload.token,
           user: action.payload.user,
-          userLocation: action.payload.location,
-          jobLocation: action.payload.location,
+          clearance: action.payload.clearance,
+          manager: action.payload.manager,
           showAlert: true,
           alertType: 'success',
           alertText: action.payload.alertText,
@@ -93,12 +94,10 @@ const reducer = (state, action) => {
     if (action.type === CLEAR_VALUES) {
       const initialState = {
         isEditing: false,
-        editJobId: '',
-        position: '',
-        company: '',
-        jobLocation: state.userLocation,
-        jobType: 'full-time',
-        status: 'pending',
+        user: null,
+        token: null,
+        manager: '',
+        clearance: '',
       }
       return { ...state, ...initialState }
     }
@@ -137,6 +136,17 @@ const reducer = (state, action) => {
     }
     if (action.type === DELETE_BOOKING_BEGIN) {
       return { ...state, isLoading: true }
+    }
+    if (action.type === SHOW_STATS_BEGIN) {
+      return { ...state, isLoading: true, showAlert: false }
+    }
+    if (action.type === SHOW_STATS_SUCCESS) {
+      return {
+        ...state,
+        isLoading: false,
+        stats: action.payload.stats,
+        monthlyBookings: action.payload.monthlyBookings,
+      }
     }
     throw new Error(`no such action :${action.type}`)
   }

@@ -39,6 +39,7 @@ function Register() {
       return
     }
     const currentUser = { name, email, password, clearance, manager }
+    
     if (isMember) {
       setupUser({
         currentUser,
